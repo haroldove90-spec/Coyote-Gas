@@ -1,0 +1,6 @@
+{
+  "name": "Coyote Gas",
+  "description": "Dashboard y app móvil de Coyote Gas para administrar ventas de gas LP a domicilio y efectuar cobros con calculadora integrada.",
+  "requestFramePermissions": ["notifications", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
