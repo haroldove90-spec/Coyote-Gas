@@ -229,7 +229,7 @@ export function TicketModal({ venta, isOpen, onClose }: TicketModalProps) {
 
           {/* WHATSAPP ACTION CARD BELOW TICKET */}
           <div className="mt-3.5 bg-white p-3.5 rounded-2xl border border-gray-200 space-y-3 shadow-md">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Compartir Comprobante</span>
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Compartir Comprobante (Opcional)</span>
             
             <div className="space-y-2">
               <div className="flex gap-1.5">
@@ -272,14 +272,24 @@ export function TicketModal({ venta, isOpen, onClose }: TicketModalProps) {
               )}
             </div>
 
-            <button
-              onClick={() => {
-                window.print();
-              }}
-              className="w-full py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-all"
-            >
-              <Printer className="w-3.5 h-3.5" /> Imprimir Ticket (Bluetooth / POS)
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  window.print();
+                }}
+                className="py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 transition-all"
+              >
+                <Printer className="w-3.5 h-3.5" /> Imprimir
+              </button>
+
+              <button
+                id="manual-close-ticket-btn"
+                onClick={onClose}
+                className="py-2 bg-[#305975] hover:bg-[#25465e] text-white font-bold text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 transition-all shadow-sm active:scale-95"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" /> Cerrar Ticket
+              </button>
+            </div>
           </div>
 
         </motion.div>

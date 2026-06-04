@@ -14,11 +14,15 @@ import { InstallModal } from './components/InstallModal';
 import { AdminView } from './components/AdminView';
 import { VendedorView } from './components/VendedorView';
 import { TicketModal } from './components/TicketModal';
+import { HomeSelector } from './components/HomeSelector';
+import { PerfilView } from './components/PerfilView';
+import { AdminProfile } from './dataStore';
 
 export default function App() {
   // --- 1. Core States ---
   const [appState, setAppState] = useState<AppState>(getInitialState);
-  const [activeRole, setActiveRole] = useState<Role>('vendedor');
+  const [activeRole, setActiveRole] = useState<Role | 'home'>('home');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'perfil'>('dashboard');
   
   // Custom Flow States
   const [showSplash, setShowSplash] = useState(true);
@@ -131,9 +135,48 @@ export default function App() {
     localStorage.setItem('coyo_gas_perms_ok', 'true');
   };
 
+  const handleSaveAdminProfile = (updated: AdminProfile) => {
+    setAppState(prev => ({
+      ...prev,
+      adminProfile: updated
+    }));
+  };
+
+  const handleSaveVendedorProfile = (updated: Vendedor) => {
+    setAppState(prev => ({
+      ...prev,
+      vendedores: prev.vendedores.map(v => v.id === updated.id ? updated : v)
+    }));
+  };
+
   // --- 5. Splash screen gate ---
   if (showSplash) {
     return <Splash onComplete={() => setShowSplash(false)} />;
+  }
+
+  // --- 5b. Home Role Selection Gate ---
+  if (activeRole === 'home') {
+    return (
+      <div className="min-h-screen bg-[#f0f2f5] flex flex-col antialiased">
+        <HomeSelector onSelectRole={(role) => {
+          setActiveRole(role);
+          setActiveTab('dashboard');
+        }} />
+        
+        {/* Modals needed during home screen can attach here silently */}
+        <PermissionsModal
+          isOpen={showPermissions}
+          onClose={() => setShowPermissions(false)}
+          onGranted={handlePermissionsCompleted}
+        />
+        <InstallModal
+          isOpen={showInstallHelp}
+          onClose={() => setShowInstallHelp(false)}
+          onInstall={triggerPWAInstall}
+          isInstallable={isInstallable}
+        />
+      </div>
+    );
   }
 
   return (
@@ -166,31 +209,63 @@ export default function App() {
               Módulos Coyote
             </span>
 
-            {/* Seller terminal option */}
+            {/* Home selector option (Return to Home to change role) */}
             <button
-              onClick={() => setActiveRole('vendedor')}
+              onClick={() => setActiveRole('home')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeRole === 'vendedor' 
+                activeRole === 'home' 
                   ? 'bg-black/30 text-white border-l-4 border-[#7294A0] shadow-inner' 
-                  : 'text-white/80 hover:text-white hover:bg-white/5'
+                  : 'text-[#7294A0] hover:text-white hover:bg-white/5'
               }`}
             >
-              <Smartphone className="w-5 h-5 text-[#7294A0]" />
-              Terminal Vendedor
+              <User className="w-5 h-5 text-[#7294A0]" />
+              Inicio (Cambiar Rol)
             </button>
 
-            {/* Admin administration option */}
-            <button
-              onClick={() => setActiveRole('admin')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeRole === 'admin' 
-                  ? 'bg-black/30 text-white border-l-4 border-[#7294A0] shadow-inner' 
-                  : 'text-white/80 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Settings className="w-5 h-5 text-[#7294A0]" />
-              Dashboard Admin
-            </button>
+            {/* Seller terminal option - Only visible in vendedor role */}
+            {activeRole === 'vendedor' && (
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'dashboard' 
+                    ? 'bg-black/30 text-white border-l-4 border-[#7294A0] shadow-inner' 
+                    : 'text-[#7294A0] hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Smartphone className="w-5 h-5 text-[#7294A0]" />
+                Terminal Vendedor
+              </button>
+            )}
+
+            {/* Admin administration option - Only visible in admin role */}
+            {activeRole === 'admin' && (
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'dashboard' 
+                    ? 'bg-black/30 text-white border-l-4 border-[#7294A0] shadow-inner' 
+                    : 'text-[#7294A0] hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Settings className="w-5 h-5 text-[#7294A0]" />
+                Dashboard Admin
+              </button>
+            )}
+
+            {/* Unified User Profile Option - Visible in both logged-in roles */}
+            {(activeRole === 'vendedor' || activeRole === 'admin') && (
+              <button
+                onClick={() => setActiveTab('perfil')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'perfil' 
+                    ? 'bg-black/30 text-white border-l-4 border-[#7294A0] shadow-inner' 
+                    : 'text-[#7294A0] hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <UserCheck className="w-5 h-5 text-[#7294A0]" />
+                Mi Perfil Personal
+              </button>
+            )}
           </div>
         </div>
 
@@ -224,27 +299,63 @@ export default function App() {
       */}
       <nav className="md:hidden fixed bottom-1.5 inset-x-3.5 bg-[#305975] text-white rounded-2xl shadow-xl border border-[#305975]/50 flex items-center justify-around py-2.5 px-4 z-40">
         
-        {/* Mobile menu point: Seller tab */}
+        {/* Mobile menu point: Return to Home selection */}
         <button
-          onClick={() => setActiveRole('vendedor')}
+          onClick={() => setActiveRole('home')}
           className={`flex flex-col items-center gap-0.5 transition-all outline-none ${
-            activeRole === 'vendedor' ? 'scale-110 text-[#7294A0]' : 'text-slate-300 opacity-70'
+            activeRole === 'home' ? 'scale-110 text-[#7294A0]' : 'text-slate-200 opacity-70'
           }`}
         >
-          <Smartphone className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Vendedor</span>
+          <User className="w-5 h-5" />
+          <span className="text-[9px] font-black">Inicio</span>
         </button>
 
-        {/* Mobile menu point: Admin tab */}
-        <button
-          onClick={() => setActiveRole('admin')}
-          className={`flex flex-col items-center gap-0.5 transition-all outline-none ${
-            activeRole === 'admin' ? 'scale-110 text-[#7294A0]' : 'text-slate-300 opacity-70'
-          }`}
-        >
-          <Settings className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Admin</span>
-        </button>
+        {/* Mobile menu point: Seller tab - Only visible in vendedor role */}
+        {activeRole === 'vendedor' && (
+          <button
+            onClick={() => {
+              setActiveRole('vendedor');
+              setActiveTab('dashboard');
+            }}
+            className={`flex flex-col items-center gap-0.5 transition-all outline-none ${
+              activeTab === 'dashboard' ? 'scale-110 text-[#7294A0]' : 'text-slate-300 opacity-70'
+            }`}
+          >
+            <Smartphone className="w-5 h-5" />
+            <span className="text-[9px] font-bold">Vendedor</span>
+          </button>
+        )}
+
+        {/* Mobile menu point: Admin tab - Only visible in admin role */}
+        {activeRole === 'admin' && (
+          <button
+            onClick={() => {
+              setActiveRole('admin');
+              setActiveTab('dashboard');
+            }}
+            className={`flex flex-col items-center gap-0.5 transition-all outline-none ${
+              activeTab === 'dashboard' ? 'scale-110 text-[#7294A0]' : 'text-slate-300 opacity-70'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span className="text-[9px] font-bold">Admin</span>
+          </button>
+        )}
+
+        {/* Mobile menu point: Mi Perfil - visible for both logged-in roles */}
+        {(activeRole === 'vendedor' || activeRole === 'admin') && (
+          <button
+            onClick={() => {
+              setActiveTab('perfil');
+            }}
+            className={`flex flex-col items-center gap-0.5 transition-all outline-none ${
+              activeTab === 'perfil' ? 'scale-110 text-[#7294A0]' : 'text-slate-300 opacity-70'
+            }`}
+          >
+            <UserCheck className="w-5 h-5" />
+            <span className="text-[9px] font-bold">Mi Perfil</span>
+          </button>
+        )}
 
         {/* Mobile menu point: Install PWA */}
         <button
@@ -292,8 +403,17 @@ export default function App() {
           </div>
         </div>
 
-        {/* Dynamic switcher based on current role requested */}
-        {activeRole === 'admin' ? (
+        {/* Dynamic switcher based on current role requested and tab select state */}
+        {activeTab === 'perfil' ? (
+          <PerfilView
+            role={activeRole as 'admin' | 'vendedor'}
+            adminProfile={appState.adminProfile}
+            activeVendedor={appState.vendedores.find(v => v.id === appState.activeVendedorId)}
+            onSaveAdmin={handleSaveAdminProfile}
+            onSaveVendedor={handleSaveVendedorProfile}
+            onBack={() => setActiveTab('dashboard')}
+          />
+        ) : activeRole === 'admin' ? (
           <AdminView
             precioPorLitro={appState.precioPorLitro}
             onUpdatePrecio={handleUpdatePrecio}

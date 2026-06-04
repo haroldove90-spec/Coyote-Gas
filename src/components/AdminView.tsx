@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   TrendingUp, Users, DollarSign, Flame, RefreshCw, UserPlus, 
-  MapPin, CheckCircle, AlertCircle, Eye, Trash2, Calendar, FileText
+  MapPin, CheckCircle, AlertCircle, Eye, Trash2, Calendar, FileText,
+  Key, Lock, Share2, CheckSquare
 } from 'lucide-react';
 import { Vendedor, Venta, CorteCaja } from '../types';
 
@@ -29,9 +30,33 @@ export function AdminView({
   const [nuevoPrecioInput, setNuevoPrecioInput] = useState(precioPorLitro.toString());
   const [nombreVendedor, setNombreVendedor] = useState('');
   const [telefonoVendedor, setTelefonoVendedor] = useState('');
-  const [unidadVendedor, setUnidadVendedor] = useState('Unidad 01');
+  const [unidadVendedor, setUnidadVendedor] = useState('Unidad 04');
+  const [usuarioVendedor, setUsuarioVendedor] = useState('');
+  const [contrasenaVendedor, setContrasenaVendedor] = useState('');
+  const [ultimoVendedorCreado, setUltimoVendedorCreado] = useState<Vendedor | null>(null);
+  
   const [showPrecioToast, setShowPrecioToast] = useState(false);
   const [showVendedorToast, setShowVendedorToast] = useState(false);
+
+  // Auto-generate safe alphanumeric password
+  const handleAutoGenerarContrasena = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let pass = '';
+    for (let i = 0; i < 7; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setContrasenaVendedor(`CYT-${pass}`);
+  };
+
+  // Auto-generate username from name & unit
+  const handleSugerirUsuario = (nombre: string) => {
+    if (!nombre) return;
+    const cleanName = nombre.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+      .replace(/[^a-z0-9]/g, ''); // alphanumeric only
+    const randomNum = Math.floor(100 + Math.random() * 900);
+    setUsuarioVendedor(`coy_${cleanName.slice(0, 8)}_${randomNum}`);
+  };
 
   // Calculate high-quality analytics metrics (Only for today)
   const todaySlash = new Date().toISOString().split('T')[0];
@@ -57,20 +82,31 @@ export function AdminView({
     e.preventDefault();
     if (nombreVendedor.trim() === '' || telefonoVendedor.trim() === '') return;
 
+    const finalUsuario = usuarioVendedor.trim() || `coy_${nombreVendedor.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8)}_${Math.floor(100 + Math.random() * 900)}`;
+    const finalContrasena = contrasenaVendedor.trim() || `CYT-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const newV: Vendedor = {
       id: `v-${Date.now()}`,
       nombre: `${nombreVendedor.trim()} (${unidadVendedor})`,
       telefono: telefonoVendedor.trim(),
+      usuario: finalUsuario,
+      contrasena: finalContrasena,
       fechaRegistro: new Date().toISOString().split('T')[0],
       activo: true
     };
 
     onAddVendedor(newV);
+    setUltimoVendedorCreado(newV);
+    
+    // Clear inputs
     setNombreVendedor('');
     setTelefonoVendedor('');
-    setUnidadVendedor('Unidad 01');
+    setUnidadVendedor('Unidad 04');
+    setUsuarioVendedor('');
+    setContrasenaVendedor('');
+    
     setShowVendedorToast(true);
-    setTimeout(() => setShowVendedorToast(false), 3000);
+    setTimeout(() => setShowVendedorToast(false), 5000);
   };
 
   // Sales per salesperson calculation
@@ -219,74 +255,158 @@ export function AdminView({
           </div>
 
           {/* 2. REGISTRAR NUEVO VENDEDOR */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-            <h2 className="text-lg font-bold text-[#305975] flex items-center gap-2 mb-4">
+          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold text-[#305975] flex items-center gap-2">
               <span className="w-2 h-6 bg-[#305975] rounded-full"></span>
-              Registrar Operador
+              Registrar Operador en Ruta
             </h2>
 
-            <p className="text-xs text-gray-500 mb-4">
-              Agrega operadores y unidades para autorizar su ingreso a la plataforma y habilitar su corte de caja diario.
-            </p>
-
-            <form onSubmit={handleRegistrarVendedor} className="space-y-3.5">
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1">Nombre Completo</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Manuel Sandoval"
-                  value={nombreVendedor}
-                  onChange={(e) => setNombreVendedor(e.target.value)}
-                  className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl focus:border-[#7294A0] focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1">Celular (10 dígitos)</label>
-                  <input
-                    type="tel"
-                    required
-                    pattern="[0-9]{10}"
-                    placeholder="5512345678"
-                    value={telefonoVendedor}
-                    onChange={(e) => setTelefonoVendedor(e.target.value)}
-                    className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl focus:border-[#7294A0] focus:outline-none"
-                  />
+            {ultimoVendedorCreado ? (
+              <div className="bg-[#7294A0]/10 border border-[#7294A0]/30 rounded-2xl p-5 space-y-4 animate-fadeIn">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <CheckSquare className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-bold text-sm">¡Operador Registrado con Éxito!</span>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1">Unidad / Camión</label>
-                  <select
-                    value={unidadVendedor}
-                    onChange={(e) => setUnidadVendedor(e.target.value)}
-                    className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl focus:border-[#7294A0] focus:outline-none"
+                
+                <div className="p-3 bg-white border border-gray-150 rounded-xl space-y-2 font-mono text-xs">
+                  <p className="text-slate-500 font-sans font-bold text-[10px] uppercase">Ficha de Acceso Coyote Gas</p>
+                  <div>
+                    <span className="text-slate-400">Nombre:</span> <strong className="text-[#305975]">{ultimoVendedorCreado.nombre}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Celular:</span> <span className="text-slate-800">{ultimoVendedorCreado.telefono}</span>
+                  </div>
+                  <div className="border-t border-dashed mt-2 pt-2">
+                    <span className="text-slate-400">Usuario:</span> <strong className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{ultimoVendedorCreado.usuario}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Contraseña:</span> <strong className="text-[#305975] bg-slate-50 px-1.5 py-0.5 rounded">{ultimoVendedorCreado.contrasena}</strong>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <a
+                    href={`https://wa.me/52${ultimoVendedorCreado.telefono}?text=Hola%20*${encodeURIComponent(ultimoVendedorCreado.nombre)}*%2C%20bienvenido%20a%20*Coyote%20Gas*.%20Tus%20credenciales%20de%20acceso%20son%3A%0A%0A%F0%9F%91%A4%20*Usuario%3A*%20${encodeURIComponent(ultimoVendedorCreado.usuario || '')}%0A%F0%9F%94%91%20*Contrase%C3%B1a%3A*%20${encodeURIComponent(ultimoVendedorCreado.contrasena || '')}%0A%0A%F0%9F%93%B1%20Inicia%20sesi%C3%B3n%20en%3A%20${encodeURIComponent(window.location.origin)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-[0.98] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <option value="Unidad 04">Unidad 04 (Pipa)</option>
-                    <option value="Unidad 07">Unidad 07 (Pipa)</option>
-                    <option value="Unidad 12">Unidad 12 (Cilindros)</option>
-                    <option value="Unidad 15">Unidad 15 (Cilindros)</option>
-                    <option value="Unidad 20">Unidad 20 (Refuerzo)</option>
-                  </select>
+                    <Share2 className="w-4 h-4" /> Enviar Credenciales a WhatsApp
+                  </a>
+
+                  <button
+                    onClick={() => setUltimoVendedorCreado(null)}
+                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-[0.98] uppercase tracking-wider block"
+                  >
+                    Registrar Otro Operador
+                  </button>
                 </div>
               </div>
+            ) : (
+              <>
+                <p className="text-xs text-gray-500">
+                  Crea un usuario y contraseña para autorizar su ingreso a la terminal móvil de ventas de Coyote Gas.
+                </p>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-semibold text-xs rounded-xl shadow transition-all active:scale-[0.98] uppercase tracking-wider"
-              >
-                Guardar Operador
-              </button>
-            </form>
+                <form onSubmit={handleRegistrarVendedor} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1">Nombre Completo</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. Manuel Sandoval"
+                      value={nombreVendedor}
+                      onChange={(e) => {
+                        setNombreVendedor(e.target.value);
+                        handleSugerirUsuario(e.target.value);
+                      }}
+                      className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl focus:border-[#7294A0] focus:outline-none focus:ring-1 focus:ring-[#7294A0]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1">Celular (10 dígitos)</label>
+                      <input
+                        type="tel"
+                        required
+                        pattern="[0-9]{10}"
+                        placeholder="5512345678"
+                        value={telefonoVendedor}
+                        onChange={(e) => setTelefonoVendedor(e.target.value)}
+                        className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl focus:border-[#7294A0] focus:outline-none focus:ring-1 focus:ring-[#7294A0]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1">Unidad / Camión</label>
+                      <select
+                        value={unidadVendedor}
+                        onChange={(e) => setUnidadVendedor(e.target.value)}
+                        className="w-full p-2.5 text-sm bg-slate-50 border border-gray-150 rounded-xl focus:border-[#7294A0] focus:outline-none focus:ring-1 focus:ring-[#7294A0]"
+                      >
+                        <option value="Unidad 04">Unidad 04 (Pipa)</option>
+                        <option value="Unidad 07">Unidad 07 (Pipa)</option>
+                        <option value="Unidad 12">Unidad 12 (Cilindros)</option>
+                        <option value="Unidad 15">Unidad 15 (Cilindros)</option>
+                        <option value="Unidad 20">Unidad 20 (Refuerzo)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1 flex items-center gap-1">
+                        <Key className="w-3 h-3 text-[#7294A0]" /> Usuario de Ingreso
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Autogenerado"
+                        value={usuarioVendedor}
+                        onChange={(e) => setUsuarioVendedor(e.target.value)}
+                        className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl font-mono text-xs focus:border-[#7294A0] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[10px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-[#7294A0]" /> Contraseña
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleAutoGenerarContrasena}
+                          className="text-[9px] text-[#305975] hover:underline font-bold uppercase tracking-wider"
+                        >
+                          Auto-Generar
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Haz clic en Auto-Generar"
+                        value={contrasenaVendedor}
+                        onChange={(e) => setContrasenaVendedor(e.target.value)}
+                        className="w-full p-2.5 text-sm bg-slate-50 border border-gray-200 rounded-xl font-mono text-xs focus:border-[#7294A0] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-slate-900 hover:bg-black text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-[0.98] uppercase tracking-wider cursor-pointer"
+                  >
+                    Guardar y Generar Ficha
+                  </button>
+                </form>
+              </>
+            )}
 
             {showVendedorToast && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-3 p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-800 text-xs font-medium flex items-center gap-2"
+                className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-xs font-medium flex items-center gap-2"
               >
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                Vendedor registrado con éxito en la base de datos Coyote
+                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <span>Operador guardado en red local de Coyote Gas</span>
               </motion.div>
             )}
           </div>

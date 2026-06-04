@@ -3,9 +3,12 @@ export type Role = 'admin' | 'vendedor';
 export interface Vendedor {
   id: string;
   nombre: string;
+  usuario?: string;
+  contrasena?: string;
   telefono: string;
   fechaRegistro: string;
   activo: boolean;
+  fotoPerfil?: string;
 }
 
 export interface Venta {

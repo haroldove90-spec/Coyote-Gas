@@ -57,12 +57,21 @@ const DEFAULT_CORTES: CorteCaja[] = [
   }
 ];
 
+export interface AdminProfile {
+  nombre: string;
+  usuario: string;
+  contrasena: string;
+  telefono: string;
+  fotoPerfil?: string;
+}
+
 export interface AppState {
   precioPorLitro: number;
   vendedores: Vendedor[];
   ventas: Venta[];
   cortes: CorteCaja[];
   activeVendedorId: string;
+  adminProfile?: AdminProfile;
 }
 
 const STORAGE_KEY = 'coyo_gas_app_state_v1';
@@ -74,6 +83,15 @@ export function getInitialState(): AppState {
       const parsed = JSON.parse(saved);
       // Ensure we have properties
       if (typeof parsed.precioPorLitro === 'number' && Array.isArray(parsed.vendedores)) {
+        if (!parsed.adminProfile) {
+          parsed.adminProfile = {
+            nombre: 'Jesús Martínez',
+            usuario: 'admin_coyote',
+            contrasena: 'coyote2026',
+            telefono: '5512345678',
+            fotoPerfil: '',
+          };
+        }
         return parsed;
       }
     }
@@ -88,6 +106,13 @@ export function getInitialState(): AppState {
     ventas: DEFAULT_VENTAS,
     cortes: DEFAULT_CORTES,
     activeVendedorId: 'v-1',
+    adminProfile: {
+      nombre: 'Jesús Martínez',
+      usuario: 'admin_coyote',
+      contrasena: 'coyote2026',
+      telefono: '5512345678',
+      fotoPerfil: '',
+    }
   };
   saveState(state);
   return state;
